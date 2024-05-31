@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 # --- Configuration ---
 SAVE_DIRECTORY = "uploaded_images"
-model_path = r"C:\Users\63921\Desktop\FastAPI\runs\train\exp\weights\last.pt"  # Update to your actual path
+model_path = r"runs/train/exp/weights"  # Update to your actual path
 
 # --- YOLOv5 Model Initialization ---
 try:
