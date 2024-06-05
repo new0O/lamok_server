@@ -9,7 +9,8 @@ from pydantic import BaseModel
 
 # --- Configuration ---
 SAVE_DIRECTORY = "uploaded_images"
-model_path = r"runs/train/exp/weights"  # Update to your actual path
+SAVE_DIRECTORY1 = "processed_images"
+model_path = r"runs\train\exp\weights\last.pt"  # Update to your actual path
 
 # --- YOLOv5 Model Initialization ---
 try:
@@ -42,6 +43,8 @@ async def upload_image(payload: ImagePayload):
         # Create device-specific directory
         device_dir = os.path.join(SAVE_DIRECTORY, payload.device_id)
         os.makedirs(device_dir, exist_ok=True)
+        device_dir1 = os.path.join(SAVE_DIRECTORY1, payload.device_id)
+        os.makedirs(device_dir1, exist_ok=True)
 
         # Unique filename
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -57,13 +60,31 @@ async def upload_image(payload: ImagePayload):
         image = cv2.imread(filepath)
         results = model(image)
 
+        # Draw bounding boxes on the image
+        for *xyxy, conf, cls in results.xyxy[0]:
+            label = f'{results.names[int(cls)]} {conf:.2f}'
+            cv2.rectangle(image, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (0, 255, 0), 2)
+            cv2.putText(image, label, (int(xyxy[0]), int(xyxy[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+        # Save the image with bounding boxes
+        processed_filename = f"processed_{payload.device_id}_{timestamp}.jpg"
+        processed_filepath = os.path.join(device_dir1, processed_filename)
+        cv2.imwrite(processed_filepath, image)
+
         detected_objects = [
             {"confidence": float(conf), "class": results.names[int(cls)]}
             for *_, conf, cls in results.xyxy[0]
         ]
 
-        response_data = {"detections": detected_objects, "count": len(detected_objects),"status": "success", "message": "Image uploaded successfully", "filename": filename}  
-       # Print the response data as a list of key-value pairs
+        response_data = {
+            "detections": detected_objects,
+            "count": len(detected_objects),
+            "status": "success",
+            "message": "Image uploaded and processed successfully",
+            "filename": filename,
+            "processed_filename": processed_filename
+        }
+        # Print the response data as a list of key-value pairs
         for key, value in response_data.items():
             print(f"{key}: {value}")
 
@@ -71,7 +92,7 @@ async def upload_image(payload: ImagePayload):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
-    
+
 @app.post("/sensor-data")
 async def receive_sensor_data(sensor_data: SensorData):
     try:
@@ -87,6 +108,6 @@ async def receive_sensor_data(sensor_data: SensorData):
 
 
 # --- Start the server ---
-if __name__ == "__main__":
+if _name_ == "_main_":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

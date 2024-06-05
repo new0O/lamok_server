@@ -1,4 +1,4 @@
-weights: yolov5s.pt
+weights: runs\train\exp3\weights\last.pt
 cfg: ''
 data: dataset.yaml
 hyp:
@@ -30,11 +30,11 @@ hyp:
   mosaic: 1.0
   mixup: 0.0
   copy_paste: 0.0
-epochs: 50
+epochs: 80
 batch_size: 16
-imgsz: 320
+imgsz: 640
 rect: false
-resume: false
+resume: true
 nosave: false
 noval: false
 noautoanchor: false
@@ -69,4 +69,4 @@ bbox_interval: -1
 artifact_alias: latest
 ndjson_console: false
 ndjson_file: false
-save_dir: runs\train\exp
+save_dir: runs\train\exp3
